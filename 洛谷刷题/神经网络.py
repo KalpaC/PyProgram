@@ -41,7 +41,7 @@ while len(stack) > 0:
     i = stack.pop()
     for j, w in nodes[i].edges:
         nodes[j].inDegree -= 1
-        if nodes[i].state>0:
+        if nodes[i].state > 0:
             nodes[j].state += nodes[i].state * w
         if nodes[j].inDegree == 0:
             nodes[j].state -= nodes[j].u
