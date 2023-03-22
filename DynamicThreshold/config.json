@@ -1,0 +1,10 @@
+{
+  "ColName": {
+    "TIME": "timestamp",
+    "LIGHT": "Light",
+    "TEMPERATURE": "Temperature",
+    "HUMIDITY": "Humidity",
+    "TDS": "TDS",
+    "WATER_TEMP": "Watertemperature"
+  }
+}
