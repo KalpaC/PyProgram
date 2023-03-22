@@ -37,15 +37,19 @@ class DataLayer:
         self.df.index = pd.to_datetime(df[TIME])
         self.df.drop(TIME, axis=1, inplace=True)
         self.df.sort_index(inplace=True)
-
         # 重采样
         if interval:
+            self.interval = interval
             self.resampleDF = self.df.resample(interval).mean()
 
-    def getOriginDataFrame(self):
+    def getOriginDataFrame(self, copy=False):
+        if copy:
+            return self.df.copy()
         return self.df
 
-    def getResampleDataFrame(self):
+    def getResampleDataFrame(self, copy=False):
+        if copy:
+            return self.resampleDF.copy()
         return self.resampleDF
 
     def resetInterval(self, interval):
