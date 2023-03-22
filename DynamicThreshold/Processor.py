@@ -27,7 +27,7 @@ class Processor:
             for i in range(steps):
                 yield datetime
                 datetime += interval
-
+        df = pd.DataFrame()
         # 整体上是对每一列进行操作的
         for col in self.data:
             # 第一步，进行ceemdan分解
@@ -40,18 +40,11 @@ class Processor:
                                       n_jobs=-1)
                 predict = model.predict(steps)
                 total += predict
+                print(pd.Series(predict,index=forward_index(-1)))
             ans = pd.Series(total, index=forward_index(-1))
-            print(series)
-            print(ans)
+            df[col] = ans
+        return df
 
-
-class Arima:
-    def __init__(self, series: pd.Series):
-        self.series = series
-        pass
-
-    def predict(self, index):
-        return pd.Series()
 
 
 def get_cIMFs(series: pd.Series):
