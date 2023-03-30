@@ -20,7 +20,6 @@ class Processor:
         :param steps: 向后预测的步长个数
         :return: 返回具有时间戳索引的预测数据
         """
-
         def forward_index(begin):
             interval = self.data.index[1] - self.data.index[0]
             datetime = self.data.index[begin] + interval

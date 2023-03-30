@@ -5,7 +5,7 @@ from DataLayer import *
 from Processor import *
 
 df = read_csv('data2.csv')
-dl = DataLayer(df, '1200s')
+dl = DataLayer(df, '60s')
 data = dl.getResampleDataFrame()
 processor = Processor(data)
 ans = processor.predict(20)

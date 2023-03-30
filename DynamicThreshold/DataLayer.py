@@ -13,6 +13,7 @@ config = "config.json"
 #   数据处理
 # 数据应该包括，时间戳，对应的水温、湿度、光照等数据。
 # 数据本身从Kafka上读取得到，但由于目前Kafka已停机，暂时只可规定数据应该表示为DataFrame。
+# 实际上Kafka上的数据是流式的，还需将数据汇集并处理成df类型
 
 
 # 规定外部接口
@@ -41,6 +42,11 @@ class DataLayer:
         if interval:
             self.interval = interval
             self.resampleDF = self.df.resample(interval).mean()
+            NaCnt = self.resampleDF[self.resampleDF.keys()[0]].isna().sum()
+            if NaCnt>0.1*self.resampleDF.shape[0]:
+                raise RuntimeWarning('Bad choice of interval, which causes many NaNs.')
+            self.resampleDF.interpolate(inplace=True)
+            print(self.resampleDF)
 
     def getOriginDataFrame(self, copy=False):
         if copy:
@@ -64,24 +70,3 @@ class DataLayer:
 
 def read_csv(filePath)->pd.DataFrame:
     return pd.read_csv(filePath)
-
-
-#   由于需要预测的物理量是混沌时间序列，需要多次建模，预测。
-#   我们需要找到合适的时间间隔，以在减小开销的同时尽可能提高预测的准确率。
-#   接口2，采用CEEMDAN-ARIMA-GARCH建立模型。我们后续需要根据此模型的情况来对其进行优化
-
-
-
-
-
-
-# for i in range(cIMFs.shape[0]):
-#     cimf = cIMFs[i]
-#     test = pd.Series(cimf)
-#     arima = MyARIMA(test)
-#     arima.predict_forecast(3 * len(test) // 4, len(test) + 20)
-
-# 选定一定范围的数据作为训练数据，剩下部分作为测试数据
-
-
-#
