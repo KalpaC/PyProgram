@@ -7,16 +7,29 @@ import time
 import pandas as pd
 import csv
 
-f = open('DeviceData2.csv', 'w+',)
+f = open('DeviceData2.csv', 'w+',newline='')
 writer = csv.writer(f)
-header = ['light', 'temperature', 'humidity']
-writer.writerow(header)
+writer.writerow(['timestamp']+cmcc_onenet_api.DataNames)
+lastTime = {}
 while True:
-    devices: list[SensorDevice] = device_config.get_devices_from_xml('./device-config.xml')
-    d = devices[0]
-    cmcc_onenet_api.get_device_payload(d)
-    l = [d.light, d.temperature, d.humidity]
-    writer.writerow(l)
-    print(l)
+    devices: list[SensorDevice] = device_config.get_devices_from_xml('./new-device-config.xml')
+    for d in devices:
+        cmcc_onenet_api.get_device_payload(d)
+        if d.id not in lastTime:
+            lastTime[d.id] = d.timestamp
+            l = [d.timestamp, d.temperature, d.humidity, d.light, d.TDS, d.waterTemperature]
+            writer.writerow(l)
+            print(d.name, l)
+        elif lastTime[d.id] != d.timestamp:
+            lastTime[d.id] = d.timestamp
+            l = [d.timestamp,d.temperature,d.humidity,d.light,d.TDS,d.waterTemperature]
+            writer.writerow(l)
+            print(d.name,l)
+    # 3/30
+    # 待解决的问题：
+    # 1. 可拓展性太差，加数据需要直接改代码，显然不合理，所以实际将onenet数据推到kafka的代码还要重构
+    # 2. 数据格式可能不对
+    # 3. 设备之间的数据关系如何处理没有确定
+    # 4. 这一层具体的需求不确定，数据清洗那边都要做什么还没分好锅
     f.flush()
     time.sleep(5)

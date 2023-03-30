@@ -12,9 +12,12 @@ class SensorDevice:
         self.id = None
         self.key = None
         self.name = 'Default'
+        self.timestamp = ""
         self.humidity = 0.0
         self.temperature = 0.0
         self.light = 0.0
+        self.TDS = 0.0
+        self.waterTemperature = 0.0
 
     def set_light(self, light):
         self.light = light
@@ -28,13 +31,25 @@ class SensorDevice:
         self.humidity = humidity
         return self
 
+    def set_TDS(self, TDS):
+        self.TDS = TDS
+
+    def set_waterTemperature(self,waterTemperature):
+        self.waterTemperature = waterTemperature
+        return self
+
     def __repr__(self):
-        return f'SensorDevice: Name: {self.name} ID: {self.id}\n' \
-               f'light: {self.light}, temperature: {self.temperature}, humidity: {self.humidity}'
+        return self.__str__()
 
     def __str__(self):
-        return json.dumps({"name": self.name, "id": self.id, "light": self.light,
-                           "temperature": self.temperature, "humidity": self.humidity, }, ensure_ascii=False)
-
+        return json.dumps({"name": self.name,
+                           "id": self.id,
+                           "timestamp": self.timestamp,
+                           "light": self.light,
+                           "temperature": self.temperature,
+                           "humidity": self.humidity,
+                           "TDS": self.TDS,
+                           "waterTemperature":self.waterTemperature
+                           }, ensure_ascii=False)
 
 print(SensorDevice())
