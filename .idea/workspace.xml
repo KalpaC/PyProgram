@@ -4,16 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fc01de6e-9388-4ef8-a92b-aa1ae717fcbb" name="Changes" comment="AddFiles">
-      <change afterPath="$PROJECT_DIR$/smart-fish-farming-RELEASE/new-device-config.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DynamicThreshold/TimeSequence.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/DynamicThreshold/easyarima.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/smart-fish-farming-RELEASE/DeviceData2.csv" beforeDir="false" afterPath="$PROJECT_DIR$/smart-fish-farming-RELEASE/DeviceData2.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/smart-fish-farming-RELEASE/cmcc_onenet_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/smart-fish-farming-RELEASE/cmcc_onenet_api.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/smart-fish-farming-RELEASE/onenet_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/smart-fish-farming-RELEASE/onenet_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/smart-fish-farming-RELEASE/sensor_device.py" beforeDir="false" afterPath="$PROJECT_DIR$/smart-fish-farming-RELEASE/sensor_device.py" afterDir="false" />
-    </list>
+    <list default="true" id="fc01de6e-9388-4ef8-a92b-aa1ae717fcbb" name="Changes" comment="Changes" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -337,7 +328,14 @@
       <option name="project" value="LOCAL" />
       <updated>1680177478194</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Changes">
+      <created>1680186960881</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1680186960881</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="UnknownFeatures">
@@ -355,10 +353,10 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Changes" />
     <MESSAGE value="重建" />
     <MESSAGE value="change" />
     <MESSAGE value="AddFiles" />
-    <option name="LAST_COMMIT_MESSAGE" value="AddFiles" />
+    <MESSAGE value="Changes" />
+    <option name="LAST_COMMIT_MESSAGE" value="Changes" />
   </component>
 </project>
