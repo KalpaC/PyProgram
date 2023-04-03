@@ -7,7 +7,7 @@ import time
 import pandas as pd
 import csv
 
-f = open('DeviceData2.csv', 'w+',newline='')
+f = open('DeviceData.csv', 'a+',newline='')
 writer = csv.writer(f)
 writer.writerow(['timestamp']+cmcc_onenet_api.DataNames)
 lastTime = {}
@@ -17,14 +17,12 @@ while True:
         cmcc_onenet_api.get_device_payload(d)
         if d.id not in lastTime:
             lastTime[d.id] = d.timestamp
-            l = [d.timestamp, d.temperature, d.humidity, d.light, d.TDS, d.waterTemperature]
-            writer.writerow(l)
-            print(d.name, l)
-        elif lastTime[d.id] != d.timestamp:
-            lastTime[d.id] = d.timestamp
-            l = [d.timestamp,d.temperature,d.humidity,d.light,d.TDS,d.waterTemperature]
-            writer.writerow(l)
-            print(d.name,l)
+        elif lastTime[d.id] == d.timestamp:
+            continue
+        lastTime[d.id] = d.timestamp
+        l = [d.timestamp, d.temperature, d.humidity, d.light, d.TDS, d.waterTemperature]
+        writer.writerow(l)
+        print(d.name, l)
     # 3/30
     # 待解决的问题：
     # 1. 可拓展性太差，加数据需要直接改代码，显然不合理，所以实际将onenet数据推到kafka的代码还要重构
