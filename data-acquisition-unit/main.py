@@ -22,11 +22,11 @@ class Env:
     def logger_init(self):
         self.logger.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        file_handler = logging.FileHandler(self.log_file(),encoding='utf-8')
         console_handler = logging.StreamHandler()
-        file_handler.setFormatter(formatter)
         console_handler.setFormatter(formatter)
-        self.logger.addHandler(file_handler)
+        # file_handler = logging.FileHandler(self.log_file(),encoding='utf-8')
+        # file_handler.setFormatter(formatter)
+        # self.logger.addHandler(file_handler)
         self.logger.addHandler(console_handler)
 
     def is_duplicated(self, d: SensorDevice):
@@ -66,25 +66,25 @@ def main_job():
         return
     # Load one-net devices.
     devices: list[SensorDevice] = device_config.get_devices_from_xml('./device-config.xml')
-    print(len(devices))
     for d in devices:
         try:
             cmcc_onenet_api.get_device_payload(d)
-            env.logger.info('Get successfully. Device:' + str(d))
         except TimeoutError as e:
-            env.logger.warning('Get unsuccessfully.')
+            env.logger.warning('GET timeout.')
         if env.is_duplicated(d):
             continue
+        env.logger.info('GET new record. Device:' + str(d))
         try:
             future = producer.send(env.kafka_topic(), str(d).encode('utf-8'), key=env.topic_key().encode('utf-8'))
             future.get(timeout=env.future_timeout())
             env.logger.info('Send successfully. Device:' + str(d))
         except errors.KafkaError as e:
-            env.logger.warning('Send unsuccessfully. %s' % str(e))
+            env.logger.warning('Send FAILED. %s' % str(e))
     producer.flush()
     producer.close()
 
 def main():
+    env.logger.info('DAU START REUNNING. Parameters: {"job_interval":%ds, "future_timeout":%ds}'%(env.job_interval(),env.future_timeout()))
     scheduler = BlockingScheduler()
     scheduler.add_job(main_job, 'interval', seconds=env.job_interval())
     scheduler.start()

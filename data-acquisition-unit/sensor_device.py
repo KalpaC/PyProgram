@@ -52,4 +52,3 @@ class SensorDevice:
                            "waterTemperature":self.waterTemperature
                            }, ensure_ascii=False)
 
-print(SensorDevice())

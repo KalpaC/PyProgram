@@ -4,7 +4,6 @@ from sensor_device import *
 import cmcc_onenet_api
 import device_config
 import time
-import pandas as pd
 import csv
 
 f = open('DeviceData.csv', 'a+',newline='')
