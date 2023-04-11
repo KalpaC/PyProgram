@@ -1,0 +1,15 @@
+{
+  "kafka": {
+    "kafka_server": "192.168.36.139:9092",
+    "kafka_topic": "fish-manager",
+    "topic_key": "raw"
+  },
+  "log": {
+    "log_file": "DAU.log"
+  },
+  "parameter":
+  {
+    "job_interval": 5,
+    "future_timeout": 3
+  }
+}

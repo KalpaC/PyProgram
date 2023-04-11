@@ -12,10 +12,9 @@ writer = csv.writer(f)
 writer.writerow(['timestamp']+cmcc_onenet_api.DataNames)
 lastTime = {}
 while True:
-    devices: list[SensorDevice] = device_config.get_devices_from_xml('./new-device-config.xml')
+    devices: list[SensorDevice] = device_config.get_devices_from_xml('device-config.xml')
     for d in devices:
         cmcc_onenet_api.get_device_payload(d)
-        print('log:',d)
         if d.id not in lastTime:
             lastTime[d.id] = d.timestamp
         elif lastTime[d.id] == d.timestamp:
@@ -24,6 +23,7 @@ while True:
         l = [d.timestamp, d.temperature, d.humidity, d.light, d.TDS, d.waterTemperature]
         writer.writerow(l)
         print(d.name, l)
+
     # 3/30
     # 待解决的问题：
     # 1. 可拓展性太差，加数据需要直接改代码，显然不合理，所以实际将onenet数据推到kafka的代码还要重构
