@@ -11,8 +11,9 @@ import logging
 import cmcc_onenet_api
 import device_config
 
+
 class Env:
-    def __init__(self,fp):
+    def __init__(self, fp):
         with open(fp, 'r', encoding='utf-8') as f:
             self.config = json.load(f)
         self.lastTime = {}
@@ -55,7 +56,12 @@ class Env:
     def future_timeout(self):
         return self.config['parameter']['future_timeout']
 
+    def onenet_get_timeout(self):
+        return self.config['parameter']['onenet_get_timeout']
+
+
 env = Env('basic-config.json')
+
 
 def main_job():
     # Initial Kafka producer.
@@ -68,7 +74,7 @@ def main_job():
     devices: list[SensorDevice] = device_config.get_devices_from_xml('./device-config.xml')
     for d in devices:
         try:
-            cmcc_onenet_api.get_device_payload(d)
+            cmcc_onenet_api.get_device_payload(d, env.onenet_get_timeout())
         except TimeoutError as e:
             env.logger.warning('GET timeout.')
         if env.is_duplicated(d):
@@ -83,8 +89,11 @@ def main_job():
     producer.flush()
     producer.close()
 
+
 def main():
-    env.logger.info('DAU START REUNNING. Parameters: {"job_interval":%ds, "future_timeout":%ds}'%(env.job_interval(),env.future_timeout()))
+    env.logger.info(
+        'DAU START REUNNING. Parameters: {"job_interval":%ds, "future_timeout":%ds, onenet_get_timeout:%ds}' % (
+            env.job_interval(), env.future_timeout(), env.onenet_get_timeout()))
     scheduler = BlockingScheduler()
     scheduler.add_job(main_job, 'interval', seconds=env.job_interval())
     scheduler.start()

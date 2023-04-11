@@ -24,14 +24,14 @@ def get_device_data(device_id, api_key):
     return response.text
 
 
-def get_device_payload(device: SensorDevice):
+def get_device_payload(device: SensorDevice, timeout: int):
 
     url = f'https://api.heclouds.com/devices/{device.id}/datapoints?datastream_id=' + get_name_string() + '&limit=1'
     headers = {
         'api-key': f'{device.key}'
     }
     try:
-        response = requests.get(url, headers=headers,timeout=2)
+        response = requests.get(url, headers=headers,timeout=timeout)
     except TimeoutError as e:
         raise e
     datastreams = json.loads(response.text)['data']['datastreams']  # It is type of list.
