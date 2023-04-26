@@ -13,7 +13,7 @@ class Processor:
         接受具有时间戳的等间隔数据
         :param data:
         """
-        self.data = data
+        self.data = data.copy()
 
     def predict_only_ARIMA(self, steps):
         # 无CEEMDAN，纯ARIMA，可作为对照组
@@ -30,7 +30,7 @@ class Processor:
             model = pm.auto_arima(series,
                                   stepwise=False,
                                   n_jobs=-1)
-            predict = model.predict(steps)
+            predict = model.predict_only_ARIMA(steps)
             ans = pd.Series(predict, index=forward_index(-1))
             df[col] = ans
         return df
@@ -57,7 +57,7 @@ class Processor:
                 model = pm.auto_arima(cimf,
                                       stepwise=False,
                                       n_jobs=-1)
-                predict = model.predict(steps)
+                predict = model.predict_only_ARIMA(steps)
                 total += predict
                 print(pd.Series(predict,index=forward_index(-1)))
             ans = pd.Series(total, index=forward_index(-1))

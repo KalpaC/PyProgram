@@ -38,6 +38,7 @@ class Env:
         self.lastTime[d.id] = d.timestamp
         return False
 
+
     def kafka_server(self):
         return self.config['kafka']['kafka_server']
 

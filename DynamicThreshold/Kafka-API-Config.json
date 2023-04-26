@@ -1,0 +1,21 @@
+{
+  "basic": {
+    "topic":"fish-keeper-raw",
+    "server": "192.168.46.134:9092",
+    "first_size":50,
+    "update_size": 20,
+    "delay": 5
+  },
+
+  "KafkaRecordDict": {
+    "DeviceId": [],
+    "Timestamp": [],
+    "Light": [],
+    "Temperature": [],
+    "Humidity": [],
+    "Watertemperature": [],
+    "TDS": []
+  }
+
+
+}

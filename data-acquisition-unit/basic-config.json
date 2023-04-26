@@ -9,8 +9,8 @@
   },
   "parameter":
   {
-    "job_interval": 5,
-    "future_timeout": 1,
-    "onenet_get_timeout": 1
+    "job_interval": 6,
+    "future_timeout": 3,
+    "onenet_get_timeout": 3
   }
 }

@@ -45,15 +45,14 @@ class DataLayer:
             NaCnt = self.resampleDF[self.resampleDF.keys()[0]].isna().sum()
             if NaCnt>0.1*self.resampleDF.shape[0]:
                 raise RuntimeWarning('Bad choice of interval, which causes many NaNs.')
-            self.resampleDF.interpolate(inplace=True)
-            print(self.resampleDF)
+            # self.resampleDF.interpolate(inplace=True)
 
     def getOriginDataFrame(self, copy=False):
         if copy:
             return self.df.copy()
         return self.df
 
-    def getResampleDataFrame(self, copy=False):
+    def getResampleDataFrame(self, copy=False)->pd.DataFrame:
         if copy:
             return self.resampleDF.copy()
         return self.resampleDF
