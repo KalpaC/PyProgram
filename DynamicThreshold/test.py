@@ -1,5 +1,6 @@
 # test 2023/3/4 22:30
 import numpy as np
+import pandas as pd
 
 from DataLayer import *
 from Processor import *
@@ -16,4 +17,7 @@ ceemdan = processor.predict_with_CEEMDAN(10)
 print(ceemdan)
 normal = processor.predict_only_ARIMA(10)
 print(normal)
-
+js = normal.to_json(date_format='epoch')
+print(js)
+recover = pd.read_json(js)
+print(recover)

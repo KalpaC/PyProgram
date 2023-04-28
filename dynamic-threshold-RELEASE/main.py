@@ -31,12 +31,13 @@ def main_job():
         psr = Processor(df)
         steps = env.get_predict_steps()
         predict = psr.predict_with_CEEMDAN(steps)
+        predict_json = predict.to_json(date_format='epoch')
+
         # 就差预测了
         # 至少应该给出未来几次的预测值
         # 写入当前时间、未来某几个时间点的时间戳以及预测值到kafka数据流
         # 由kafka-mysql组件统一存入数据库
-
-
+        # 格式可以是 当前时间戳、未来时间间隔steps个数据的预测值
 
 
 pass

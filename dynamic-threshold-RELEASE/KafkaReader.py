@@ -4,7 +4,7 @@
 import json
 import pandas as pd
 import numpy as np
-from kafka import KafkaConsumer
+from kafka import KafkaConsumer, KafkaProducer,errors
 
 
 # 定时拉取数据，而非一有数据就拉取，如果没有拉到数据则插入NaN。
@@ -88,9 +88,15 @@ class KafkaWriter:
                 self.topic = config_dict["topic"]
                 self.group_id = config_dict["group-id"]
                 self.key = config_dict["key"]
-
         except FileNotFoundError:
             raise FileNotFoundError
         except KeyError:
             raise KeyError
+
+    def write(self, contend:str):
+        producer = KafkaProducer(bootstrap_servers=[self.server])
+        future = producer.send(self.topic,contend.encode('utf-8'),key=self.key.encode('utf-8'))
+
+
+
 

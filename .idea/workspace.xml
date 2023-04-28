@@ -5,21 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fc01de6e-9388-4ef8-a92b-aa1ae717fcbb" name="Changes" comment="Changes">
-      <change afterPath="$PROJECT_DIR$/DynamicThreshold/Kafka-API-Config.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dynamic-threshold-RELEASE/KafkaReader.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dynamic-threshold-RELEASE/Processor.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dynamic-threshold-RELEASE/env-config.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dynamic-threshold-RELEASE/env.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dynamic-threshold-RELEASE/main.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dynamic-threshold-RELEASE/reader-config.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dynamic-threshold-RELEASE/writer-config.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DynamicThreshold/ARIMA_GARCH.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/DynamicThreshold/DataLayer.py" beforeDir="false" afterPath="$PROJECT_DIR$/DynamicThreshold/DataLayer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DynamicThreshold/KafkaAPI.py" beforeDir="false" afterPath="$PROJECT_DIR$/DynamicThreshold/KafkaAPI.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/DynamicThreshold/Processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/DynamicThreshold/Processor.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/DynamicThreshold/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/DynamicThreshold/test.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data-acquisition-unit/basic-config.json" beforeDir="false" afterPath="$PROJECT_DIR$/data-acquisition-unit/basic-config.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data-acquisition-unit/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/data-acquisition-unit/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dynamic-threshold-RELEASE/KafkaReader.py" beforeDir="false" afterPath="$PROJECT_DIR$/dynamic-threshold-RELEASE/KafkaReader.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dynamic-threshold-RELEASE/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/dynamic-threshold-RELEASE/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,7 +54,7 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/CS Engineering/GitRepository/PyProgram/dynamic-threshold-RELEASE&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/CS Engineering/GitRepository/PyProgram&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;advanced.settings&quot;
   }
 }</component>
@@ -77,6 +68,7 @@
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\CS Engineering\GitRepository\PyProgram" />
       <recent name="D:\CS Engineering\GitRepository\PyProgram\dynamic-threshold-RELEASE" />
       <recent name="D:\CS Engineering\GitRepository\PyProgram\data-acquisition-unit" />
       <recent name="D:\CS Engineering\GitRepository\PyProgram\DynamicThreshold" />
@@ -375,7 +367,14 @@
       <option name="project" value="LOCAL" />
       <updated>1681181095358</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Changes">
+      <created>1682514920870</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1682514920870</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="UnknownFeatures">

@@ -65,7 +65,6 @@ class Processor:
         return df
 
 
-
 def get_cIMFs(series: pd.Series):
     """
     本函数是原始的版本，返回的数据是np.ndarray
