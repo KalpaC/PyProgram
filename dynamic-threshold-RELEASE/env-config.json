@@ -1,0 +1,5 @@
+{
+  "expiration-time":"1d",
+  "interval": "60s",
+  "steps": 5
+}
