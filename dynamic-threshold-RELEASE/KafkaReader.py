@@ -48,7 +48,8 @@ class KafkaReader:
         if messages:
             for records in messages.values():
                 for record in records:
-                    packet = json.loads(record.value)
+                    v = record.value.decode('utf-8')
+                    packet = json.loads(v)
                     self.packets_append(packet)
         else:
             for key in self.packets_dict:
