@@ -11,19 +11,19 @@ import math
 def kmph2mps(velocity):
     return velocity * 1000 / 3600
 
+
 class Vehicle:
     # Vehicle simulator: include all the information for a vehicle
     def __init__(self, start_position, start_direction, velocity):
         self.position = start_position
         self.direction = start_direction
         self.velocity = velocity
-        self.neighbors = []
         self.destinations = []
         self.turn = ''
 
 
 class V2VChannels:
-    def __init__(self, n_veh, n_RB):
+    def __init__(self, n_veh, n_sub_carrier):
         self.t = 0
         self.height_BS = 25  # m
         self.height_veh = 1.5  # m
@@ -31,11 +31,11 @@ class V2VChannels:
         self.decorrelation_distance = 10
         self.shadow_std = 3
         self.n_veh = n_veh
-        self.n_RB = n_RB
+        self.n_sub_carrier = n_sub_carrier
         self.positions = None
         self.last_distance = None
-        self.distance = np.zeros(shape=(self.n_veh,self.n_veh))  # 二维矩阵
-        self.PathLoss = np.zeros(shape=(self.n_veh,self.n_veh))
+        self.distance = np.zeros(shape=(self.n_veh, self.n_veh))  # 二维矩阵
+        self.PathLoss = np.zeros(shape=(self.n_veh, self.n_veh))
         self.Shadow = None
         self.FastFading = None
 
@@ -45,25 +45,29 @@ class V2VChannels:
         for i in range(self.n_veh):
             for j in range(self.n_veh):
                 # np.linalg.norm用于计算向量的模，此处可以用于计算两点间距离
-                self.distance[i][j] = np.linalg.norm(self.positions[i]-self.positions[j])
+                self.distance[i][j] = np.linalg.norm(self.positions[i] - self.positions[j])
 
     def update_pathLoss(self):
         for i in range(self.n_veh):
             for j in range(self.n_veh):
-                self.PathLoss[i][j] = self.get_pathLoss(i,j)
+                self.PathLoss[i][j] = self.get_pathLoss(i, j)
 
     def update_shadow(self):
         if self.last_distance is None:
             self.Shadow = np.random.normal(0, self.shadow_std, size=(self.n_veh, self.n_veh))
         else:
-            delta_distance = np.abs(self.distance-self.last_distance)
-            self.Shadow = np.exp(-1 * (delta_distance / self.decorrelation_distance)) * self.Shadow + np.sqrt(1 - np.exp(-2 * (delta_distance / self.decorrelation_distance))) * np.random.normal(0,self.shadow_std, size=(self.n_veh,self.n_veh))
+            delta_distance = np.abs(self.distance - self.last_distance)
+            self.Shadow = np.exp(-1 * (delta_distance / self.decorrelation_distance)) * self.Shadow + np.sqrt(
+                1 - np.exp(-2 * (delta_distance / self.decorrelation_distance))) * np.random.normal(0, self.shadow_std,
+                                                                                                    size=(self.n_veh,
+                                                                                                          self.n_veh))
 
-    def get_pathLoss(self,i,j):
-        d1 = abs(self.positions[i][0]-self.positions[j][0])
-        d2 = abs(self.positions[i][1]-self.positions[j][1])
+    def get_pathLoss(self, i, j):
+        d1 = abs(self.positions[i][0] - self.positions[j][0])
+        d2 = abs(self.positions[i][1] - self.positions[j][1])
         d = math.hypot(d1, d2) + 0.001
-        d_breakpoint = 4 * (self.height_BS - 1) * (self.height_veh - 1) * self.carrier_frequency * (10 ** 9) / (3 * 10 ** 8)
+        d_breakpoint = 4 * (self.height_BS - 1) * (self.height_veh - 1) * self.carrier_frequency * (10 ** 9) / (
+                3 * 10 ** 8)
 
         def PL_Los(d):
             if d <= 3:
@@ -90,17 +94,18 @@ class V2VChannels:
         return PL
 
     def update_fast_fading(self):
-        h = 1 / np.sqrt(2) * (np.random.normal(size=(self.n_veh, self.n_veh, self.n_RB)) + 1j * np.random.normal(
-            size=(self.n_veh, self.n_veh, self.n_RB)))
+        h = 1 / np.sqrt(2) * (
+                np.random.normal(size=(self.n_veh, self.n_veh, self.n_sub_carrier)) + 1j * np.random.normal(
+            size=(self.n_veh, self.n_veh, self.n_sub_carrier)))
         self.FastFading = 20 * np.log10(np.abs(h))
 
 
 class V2IChannels:
     #
-    def __init__(self, n_veh, n_RB):
+    def __init__(self, n_veh, n_sub_carrier):
         self.n_veh = n_veh
         self.BS_position = np.array([750 / 2, 1299 / 2])  # Suppose the BS is in the center
-        self.n_RB = n_RB
+        self.n_sub_carrier = n_sub_carrier
         self.height_BS = 25  # m
         self.height_veh = 1.5  # m
         self.shadow_std = 8  # dB
@@ -111,7 +116,7 @@ class V2IChannels:
         self.distance_to_BS = None
         self.PathLoss = None
 
-    def update_position(self, positions):
+    def update_positions(self, positions):
         # 传入的是按序的车辆位置信息，即position[0]对应的vehicle[1].position
         if len(positions) != self.n_veh:
             print("错误的代码，位置信息应与车辆数对应")
@@ -119,7 +124,6 @@ class V2IChannels:
         self.last_distance = self.distance_to_BS
         new_delta_horizon = np.linalg.norm(self.positions - self.BS_position, axis=1)
         self.distance_to_BS = np.hypot(new_delta_horizon, (self.height_BS - self.height_veh))
-
 
     def update_pathLoss(self):
         self.PathLoss = 128.1 + 37.6 * np.log10(self.distance_to_BS / 1000)
@@ -141,8 +145,8 @@ class V2IChannels:
 
     def update_fast_fading(self):
         # 每1ms更新一次
-        h = 1 / np.sqrt(2) * (np.random.normal(size=(self.n_veh, self.n_RB)) + 1j * np.random.normal(
-            size=(self.n_veh, self.n_RB)))
+        h = 1 / np.sqrt(2) * (np.random.normal(size=(self.n_veh, self.n_sub_carrier)) + 1j * np.random.normal(
+            size=(self.n_veh, self.n_sub_carrier)))
         self.FastFading = 20 * np.log10(np.abs(h))
 
 
@@ -158,16 +162,31 @@ class Environment:
     height = 1299
 
     def __init__(self):
+        self.vehNoiseFigure = 9  # dB
+        self.bandwidth = 4  # MHz
+        self.V2I_power_dB = 23
+        self.bsNoiseFigure = 5  # dB
+        self.bsAntGain = 8  # dB
+        self.vehAntGain = 3  # dB
+        sig2_dB = -114  # dB
+        self.sig2 = 10 ** (sig2_dB / 10)
+
         self.vehicles: list[Vehicle] = []
         self.position_time_step = 0.1
-        self.V2IChannels = None
-        self.V2VChannels = None
+        self.n_veh = 4
+        self.n_sub_carrier = 4
+        self.n_des = 1
+        self.V2V_power_dB_list = [23, 10, 5]
+        self.V2IChannels = V2IChannels(self.n_veh, self.n_sub_carrier)
+        self.V2VChannels = V2VChannels(self.n_veh, self.n_sub_carrier)
+        self.V2I_channels_with_fastfading = None
+        self.V2V_channels_with_fastfading = None
 
     def print_positions(self):
         print([(v.position, v.direction, v.turn) for v in self.vehicles])
 
     def update_large_fading(self, positions, time_step):
-        self.V2IChannels.update_position(positions)
+        self.V2IChannels.update_positions(positions)
         self.V2VChannels.update_positions(positions)
         self.V2IChannels.update_pathLoss()
         self.V2VChannels.update_pathLoss()
@@ -180,19 +199,19 @@ class Environment:
 
     def test(self):
         n_veh = 4
-        n_RB = 4
+        n_sub_carrier = 4
         self.init_all_vehicles(4)
         positions = [c.position for c in self.vehicles]
-        v2i = V2IChannels(n_veh, n_RB)
-        v2i.update_position(positions)
+        v2i = V2IChannels(n_veh, n_sub_carrier)
+        v2i.update_positions(positions)
         v2i.update_pathLoss()
         v2i.update_shadow()
         v2i.update_fast_fading()
         # self.print_positions()
         for i in range(int(1000 / self.position_time_step)):
-            print("\nstep=%d:"%i)
+            print("\nstep=%d:" % i)
             self.renew_positions()
-            v2i.update_position(positions)
+            v2i.update_positions(positions)
             v2i.update_pathLoss()
             v2i.update_shadow()
             v2i.update_fast_fading()
@@ -216,6 +235,87 @@ class Environment:
         # 初始化全部的vehicle，
         for i in range(n):
             self.add_new_vehicle()
+
+    def renew_destination(self):
+        # 找到对每辆车找到距离它最近的self.n_neighbor辆车
+        positions = np.array([c.position for c in self.vehicles])
+        distance = np.zeros((self.n_veh, self.n_veh))
+        for i in range(self.n_veh):
+            for j in range(self.n_veh):
+                # np.linalg.norm用于计算向量的模，此处可以用于计算两点间距离
+                distance[i][j] = np.linalg.norm(positions[i] - positions[j])
+        for i in range(self.n_veh):
+            sort_idx = np.argsort(distance[:, i])
+            self.vehicles[i].destinations = np.random.choice(sort_idx[1:self.n_veh // 4 + 1], self.n_des,
+                                                             replace=False)
+
+    def renew_environment(self):
+        # 执行周期维100ms的统一更新，所以并不包括FastFading的更新
+        positions = [c.position for c in self.vehicles]
+        self.V2IChannels.update_positions(positions)
+        self.V2VChannels.update_positions(positions)
+        self.V2IChannels.update_pathLoss()
+        self.V2VChannels.update_pathLoss()
+        self.V2IChannels.update_shadow()
+        self.V2VChannels.update_shadow()
+        self.V2V_channels_abs = self.V2VChannels.PathLoss + self.V2VChannels.Shadow + 50 * np.identity(
+            len(self.vehicles))
+        self.V2I_channels_abs = self.V2IChannels.PathLoss + self.V2IChannels.Shadow
+
+    def compute_channels_with_fastfading(self):
+        # 该函数只负责更新信道衰落，并不负责刷新信道
+        V2V_channels_with_fastfading = np.repeat(self.V2V_channels_abs[:, :, np.newaxis], self.n_sub_carrier, axis=2)
+        self.V2V_channels_with_fastfading = V2V_channels_with_fastfading - self.V2VChannels.FastFading
+        V2I_channels_with_fastfading = np.repeat(self.V2I_channels_abs[:, np.newaxis], self.n_sub_carrier, axis=1)
+        self.V2I_channels_with_fastfading = V2I_channels_with_fastfading - self.V2IChannels.FastFading
+
+    def get_reward(self, all_actions):
+        # all_action 为3维数组，前两维是车号x des号，最后一维是[子载波号m，功率dB]
+        channel = all_actions[:, :, 0]
+        power_selection = all_actions[:, :, 1]
+        interference = np.zeros(self.n_sub_carrier)
+        for i in range(self.n_veh):
+            for j in range(self.n_des):
+                interference[channel[i][j]] += 10 ** (
+                        (self.V2V_power_dB_list[power_selection[i][j]]
+                         - self.V2I_channels_with_fastfading[i, channel[i, j]]
+                         + self.vehAntGain + self.bsAntGain - self.bsNoiseFigure
+                         ) / 10
+                )
+        interference += self.sig2
+        V2I_Signals = 10 ** ((self.V2I_power_dB
+                              - self.V2I_channels_abs
+                              + self.vehAntGain + self.bsAntGain - self.bsNoiseFigure)
+                             / 10)
+        V2I_SINR = np.divide(V2I_Signals, interference)
+        V2I_Capacity = self.bandwidth * np.log2(1 + V2I_SINR)
+        V2I_Capacity_sum = np.sum(V2I_Capacity)
+
+        # 接下来计算V2V的信道容量
+        # 计算g_k[m]：
+        interference = np.zeros((self.n_veh,self.n_des,self.n_sub_carrier))
+
+        for i in range(self.n_veh):
+            for j in range(self.n_des):
+                pass
+
+
+
+        V2V_reward = 0
+        for i in range(self.n_veh):
+            for j in range(self.n_des):
+                if self.payloads[i][j] > 0:
+                    V2V_reward += self.beta
+                else:
+                    # 计算信道m的容量
+                    m = channel[i][j]
+                    power = self.V2V_power_dB_list[power_selection[i][j]]
+                    signal = 10 ** ((power
+                                     - self.V2V_channels_abs
+                                     + self.vehAntGain * 2
+                                     - self.vehNoiseFigure) / 10)
+
+
 
     def renew_positions(self):
         # 不能直行的条件判断
