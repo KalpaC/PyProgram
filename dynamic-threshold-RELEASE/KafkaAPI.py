@@ -6,7 +6,7 @@ import logging
 
 import pandas as pd
 import numpy as np
-from kafka import KafkaConsumer, KafkaProducer,errors
+from kafka import KafkaConsumer, KafkaProducer, errors
 
 
 # 定时拉取数据，而非一有数据就拉取，如果没有拉到数据则插入NaN。
@@ -29,9 +29,11 @@ class KafkaReader:
             raise FileNotFoundError
         except KeyError:
             raise KeyError
+        else:
+            print('配置文件读取成功')
 
     def packets_append(self, packet: dict):
-        if "Timestamp" not in packet:
+        if "timestamp" not in packet:
             raise KeyError("Timestamp field must in packet.")
         for key in self.packets_dict:
             if key not in packet:
@@ -40,12 +42,13 @@ class KafkaReader:
             self.packets_dict[key].append(packet[key])
 
     def packets_clear(self):
-        for each in self.packets_dict:
+        for each in self.packets_dict.values():
             each.clear()
 
-    def update(self,mean=True):
+    def update(self, mean=True):
         # 需要做的只是把最近的数据拉下来，求平均，打包，而已。
-        consumer = KafkaConsumer(self.topic, bootstrap_servers=[self.server], group_id=self.group_id)
+        consumer = KafkaConsumer(self.topic, bootstrap_servers=[self.server], group_id=self.group_id,
+                                 auto_offset_reset='earliest')
         messages = consumer.poll(timeout_ms=5000, max_records=100)
         logger = logging.getLogger('dynamic-threshold')
         if messages:
@@ -54,42 +57,52 @@ class KafkaReader:
                     v = record.value.decode('utf-8')
                     packet = json.loads(v)
                     self.packets_append(packet)
-                    logger.debug("接收到新记录: %s"%v)
-            logger.info('数据更新成功，最新记录时间为: %s'%(self.packets_dict['Timestamp'][-1]))
+                    logger.debug("接收到新记录: %s" % v)
+            logger.info('数据更新成功，最新记录时间为: %s' % (self.packets_dict['timestamp'][-1]))
         else:
             for key in self.packets_dict:
                 self.packets_dict[key].append(np.NaN)
             logger.info('无新数据，已填补空值')
         df = pd.DataFrame(self.packets_dict)
         self.packets_clear()
-        df.drop("Timestamp", axis=1, inplace=True)
+        df.drop("timestamp", axis=1, inplace=True)
         if mean:
             return df.mean(axis=0)
         else:
             return df
 
     def get_data_after(self, start_time: pd.Timestamp):
-        consumer = KafkaConsumer(self.topic, bootstrap_servers=[self.server], group_id=self.group_id)
-        messages = consumer.poll(timeout_ms=500, max_records=1000)
+        consumer = KafkaConsumer(self.topic, bootstrap_servers=[self.server], group_id=self.group_id,
+                                 auto_offset_reset='earliest')
+        messages = consumer.poll(timeout_ms=5000, max_records=100)
         logger = logging.getLogger('dynamic-threshold')
+        print(messages)
         while len(messages) > 0:
             for records in messages.values():
                 for record in records:
                     packet = json.loads(record.value.decode("utf-8"))
-                    logger.debug("接收到新记录: %s"%record.value.decode("utf-8"))
-                    if pd.Timestamp(packet["Timestamp"]) < start_time:
+                    logger.debug("接收到新记录: %s" % record.value.decode("utf-8"))
+                    if pd.Timestamp(packet["timestamp"]) < start_time:
                         continue
                     self.packets_append(packet)
-            messages = consumer.poll(timeout_ms=500, max_records=1000)
+            messages = consumer.poll(timeout_ms=5000, max_records=100)
         df = pd.DataFrame(self.packets_dict)
-        logger.info('拉去全部数据成功，最新记录时间为: %s' % (self.packets_dict['Timestamp'][-1]))
+        if len(self.packets_dict['timestamp']) != 0:
+            logger.info('拉取全部数据成功，最新记录时间为: %s' % (self.packets_dict['timestamp'][-1]))
+        else:
+            logger.warning('自起始时间%s后并无新数据，请检查配置' % start_time)
         self.packets_clear()
-        df.index = pd.to_datetime(df["Timestamp"])
-        df.drop("Timestamp", axis=1, inplace=True)
+        df.index = pd.to_datetime(df["timestamp"])
+        df.drop("timestamp", axis=1, inplace=True)
         return df
 
+# 需要完成几处修改
+# 1. 直接在此处完成mysql存储，不要再发到kafka上
+# 2. 针对每个名称的设备单独进行动态阈值预测，并分别写入mysql。
+#   注意需要增加对于服务器下线的检测代码，以及尝试能否修改读取逻辑，因为数据清洗部分已经将数据基本实现定时操作。
+
 class KafkaWriter:
-    def __init__(self,jconfig:str):
+    def __init__(self, jconfig: str):
         try:
             with open(jconfig, 'r', encoding="utf-8") as f:
                 config_dict = json.load(f)
@@ -102,7 +115,7 @@ class KafkaWriter:
         except KeyError:
             raise KeyError
 
-    def write(self, contend:str):
+    def write(self, contend: str):
         producer = KafkaProducer(bootstrap_servers=[self.server])
         logger = logging.getLogger('dynamic-threshold')
 
@@ -114,7 +127,3 @@ class KafkaWriter:
             logger.warning("Kafka写入失败")
         producer.flush()
         producer.close()
-
-
-
-
