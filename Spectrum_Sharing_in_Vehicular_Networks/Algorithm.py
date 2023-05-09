@@ -15,16 +15,19 @@ class Algorithm:
         self.B = B
         self.T = 0.1
         self.agent_time_step = 0.001
+        self.D = 1000
+        self.lambda_V2I = 0.5
+        self.lambda_V2V = 0.5
         for i in range(self.env.n_veh):
             for j in range(self.env.n_des):
-                self.agents.append(Agent.Agent(i, j))
+                self.agents.append(Agent.Agent(i, j, self.env, self.D))
 
     def train(self, n_episodes):
         def random_actions():
             channels = np.random.randint(0, self.env.n_sub_carrier, size=(self.env.n_veh, self.env.n_des))
             power_selections = np.random.randint(0, len(self.env.V2V_power_dB_list),
                                                  size=(self.env.n_veh, self.env.n_des))
-            return np.stack((channels,power_selections),axis=2)
+            return np.stack((channels, power_selections), axis=2)
 
         for i in range(n_episodes):
             self.env.renew_environment()
@@ -38,7 +41,7 @@ class Algorithm:
                     local_state = self.env.get_local_state(states, agent.veh_index, agent.des_index)
                     action = agent.act(local_state)
                     all_actions[agent.veh_index][agent.des_index] = action
-                global_reward = self.env.get_reward(all_actions, 0.5, 0.5)
+                global_reward = self.env.get_reward(all_actions, self.lambda_V2I, self.lambda_V2V)
                 self.env.update_small_fading()
                 new_states = self.env.get_states(all_actions)
                 for agent in self.agents:
