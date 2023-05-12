@@ -40,6 +40,7 @@ def main_job():
     logger.info("已生成预测数据，json格式为: %s"%predict_json)
     writer.write(predict_json)
 
+
 def main():
     main_job()
     scheduler = BlockingScheduler()

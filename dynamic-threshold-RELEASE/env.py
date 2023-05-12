@@ -55,5 +55,5 @@ def get_predict_steps():
 
 
 def get_interval_seconds():
-    d = get_interval_timedelta().seconds
+    d = get_interval_timedelta().seconds * get_predict_steps()
     return d

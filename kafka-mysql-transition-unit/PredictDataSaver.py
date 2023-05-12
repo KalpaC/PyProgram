@@ -31,7 +31,7 @@ class PredictDataSaver:
             user=self.config['db-username'],  # 数据库用户名
             passwd=self.config['db-password'],  # 数据库密码
             database=self.config['db-name'],  # DB name
-            auth_plugin='mysql_native_password'
+            # auth_plugin='mysql_native_password'
         )
         my_cursor = mydb.cursor()
         # 数据库名、数据库表名

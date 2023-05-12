@@ -6,8 +6,10 @@ import time
 import numpy as np
 import math
 
-
 # 一、确定道路环境
+from typing import List
+
+
 def kmph2mps(velocity):
     return velocity * 1000 / 3600
 
@@ -57,7 +59,7 @@ class V2VChannels:
                 self.PathLoss[i][j] = self.get_pathLoss(i, j)
 
     def update_shadow(self):
-        if self.last_distance is None:
+        if self.Shadow is None:
             self.Shadow = np.random.normal(0, self.shadow_std, size=(self.n_veh, self.n_veh))
         else:
             delta_distance = np.abs(self.distance - self.last_distance)
@@ -144,7 +146,6 @@ class V2IChannels:
         self.Shadow = np.exp(-1 * (delta_distance / self.Decorrelation_distance)) * self.Shadow + \
                       np.random.normal(0, self.shadow_std, self.n_veh) * \
                       np.sqrt(1 - np.exp(-2 * (delta_distance / self.Decorrelation_distance)))
-        print(self.Shadow)
 
     def update_fast_fading(self):
         # 每1ms更新一次
@@ -164,33 +165,7 @@ class Environment:
     width = 750
     height = 1299
 
-    def __init__(self):
-        self.beta = None  # 尚未确定
-        self.vehNoiseFigure = 9  # dB
-        self.bandwidth = 4  # MHz
-        self.V2I_power_dB = 23
-        self.bsNoiseFigure = 5  # dB
-        self.bsAntGain = 8  # dB
-        self.vehAntGain = 3  # dB
-        sig2_dB = -114  # dB
-        self.sig2 = power_dB2W(sig2_dB)
-        self.payload_size = 1060  # bytes
-        self.remain_time = 0.1  # s
-
-        self.vehicles: list[Vehicle] = []
-        self.position_time_step = 0.1  # s
-        self.action_time_step = 0.001  # s
-        self.n_veh = 4
-        self.n_sub_carrier = self.n_veh
-        self.n_des = 4
-        self.V2V_power_dB_list = [23, 10, 5]
-        self.V2IChannels = V2IChannels(self.n_veh, self.n_sub_carrier)
-        self.V2VChannels = V2VChannels(self.n_veh, self.n_sub_carrier)
-        self.V2I_channels_with_fastfading = None
-        self.V2V_channels_with_fastfading = None
-        self.remain_payload = np.full((self.n_veh, self.n_des), self.payload_size)
-
-    def standard_init(self, M, K, B):
+    def __init__(self, M, K, B):
         """
         尊重论文符号的参数列表，以及使用符合论文设定的默认环境参数值。
         :param M: 在本环境下等于子载波数、车辆数、V2I link数
@@ -200,7 +175,7 @@ class Environment:
         """
         # 固定的环境参数或变量
         self.vehNoiseFigure = 9  # dB
-        self.bandwidth = 4  # MHz
+        self.bandwidth = 4 * 1000000  # MHz
         self.V2I_power_dB = 23
         self.bsNoiseFigure = 5  # dB
         self.bsAntGain = 8  # dB
@@ -209,19 +184,22 @@ class Environment:
         self.sig2 = power_dB2W(sig2_dB)
         self.position_time_step = 0.1
         self.action_time_step = 0.001  # s
-        self.vehicles: list[Vehicle] = []
+        self.vehicles: List[Vehicle] = []
+        self.remain_time = 0.1  # s
 
         # 与V2V有关而可能会改变的部分
         self.n_veh = M
         self.n_sub_carrier = M
         self.n_des = K
         self.payload_size = B  # bytes
-        self.beta = None  # 尚未确定
-        self.V2V_power_dB_list = [23, 10, 5]
+        # self.beta = 8 * 1000 * 1000  # 尚未确定
+        self.V2V_power_dB_list = [23, 10, 5, -100]
         self.init_all_vehicles()
         self.V2IChannels = V2IChannels(self.n_veh, self.n_sub_carrier)
         self.V2VChannels = V2VChannels(self.n_veh, self.n_sub_carrier)
-        self.update_small_fading()
+        self.V2I_channels_with_fastfading = None
+        self.V2V_channels_with_fastfading = None
+        self.remain_payload = np.full((self.n_veh, self.n_des), self.payload_size)
 
     def reset_payload(self, B):
         self.payload_size = B
@@ -244,6 +222,7 @@ class Environment:
     def update_small_fading(self):
         self.V2IChannels.update_fast_fading()
         self.V2VChannels.update_fast_fading()
+        self.compute_channels_with_fastfading()
 
     def test(self):
         n_veh = 4
@@ -277,7 +256,7 @@ class Environment:
             x = np.random.randint(3.5 / 2, self.width - 3.5 / 2)
             y = self.lanes[direction][road]
         position = [x, y]
-        self.vehicles.append(Vehicle(position, direction, 36))
+        self.vehicles.append(Vehicle(position, direction, np.random.randint(15,60)))
 
     def init_all_vehicles(self):
         def get_destination():
@@ -291,8 +270,8 @@ class Environment:
                     distance[i][j] = np.linalg.norm(positions[i] - positions[j])
             for i in range(self.n_veh):
                 sort_idx = np.argsort(distance[:, i])
-                self.vehicles[i].destinations = np.random.choice(sort_idx[1:1 + self.n_des],
-                                                                 self.n_des, replace=False)
+                self.vehicles[i].destinations = sort_idx[1:1 + self.n_des]
+
         # 初始化全部的vehicle，
         for i in range(self.n_veh):
             self.add_new_vehicle()
@@ -326,13 +305,14 @@ class Environment:
         for m in range(self.n_sub_carrier):
             indexes = np.argwhere(channel == m)
             for i, j in indexes:
-                receive = self.vehicles[i].destinations[j]
                 V2V_interference[i][j][m] = power_dB2W(
                     self.V2I_power_dB
                     + self.interference_dB_from_V2I_to_V2V((i, j), m)
                 )
                 for other_i, other_j in indexes:
                     if other_i != i and other_j != j:
+                        if all_actions[other_i][other_j][1] == len(self.V2V_power_dB_list) - 1:
+                            continue
                         power_dB = self.V2V_power_dB_list[all_actions[other_i][other_j][1]]
                         # 注意other_i是另一辆车的车号，other_j是des号，所以用other_i来定位V2V信道的发射位置
                         # 所以发送位置下标是other_i，接收位置下标是i的destination[j]
@@ -349,6 +329,8 @@ class Environment:
         V2I_interference = np.zeros(self.n_sub_carrier)
         for i in range(self.n_veh):
             for j in range(self.n_des):
+                if all_actions[i][j][0] == len(self.V2V_power_dB_list) - 1:
+                    continue
                 m = all_actions[i][j][0]
                 V2I_interference[m] += power_dB2W(
                     self.V2V_power_dB_list[all_actions[i][j][1]]
@@ -356,7 +338,7 @@ class Environment:
                 )
         return V2I_interference
 
-    def get_states(self, all_actions):
+    def get_observations(self, all_actions):
         payloads = self.remain_payload
         remain_time = self.remain_time
         V2V_interference = self.compute_V2V_interference(all_actions)
@@ -375,15 +357,16 @@ class Environment:
                     gains[i, j, m][3] = self.interference_dB_from_V2I_to_V2V(channel, m)
         return payloads, remain_time, V2V_interference, gains
 
-    def get_local_state(self, states, veh_idx, des_idx):
+    def get_local_observation(self, global_obs, veh_idx, des_idx):
         """
         基于get_states函数的输出的拆分函数
-        :param states: get_states函数的输出
+        :param global_obs: get_states函数的输出
         :param veh_idx: Agent对应的车辆号
         :param des_idx: Agent对应的des号
         :return: Agent k的local state
         """
-        return states[0][veh_idx][des_idx],states[1],states[2][veh_idx][des_idx],states[3][veh_idx][des_idx]
+        return np.full(1, global_obs[0][veh_idx][des_idx]), np.full(1, global_obs[1]), global_obs[2][veh_idx][des_idx], \
+               global_obs[3][veh_idx][des_idx]
 
     def gain_dB_of_V2V(self, V2V_Channel, m):
         """
@@ -448,8 +431,7 @@ class Environment:
         plus = self.vehAntGain * 2
         return -minus + plus
 
-    def get_reward(self, all_actions, weight_V2I, weight_V2V):
-        # all_action 为3维数组，前两维是车号x des号，最后一维是[子载波号m，功率dB]
+    def get_V2I_capacity(self, all_actions):
         V2I_interference = self.compute_V2I_interference(all_actions)
         V2I_Signals = power_dB2W(
             self.V2I_power_dB
@@ -457,28 +439,50 @@ class Environment:
         )
         V2I_SINR = np.divide(V2I_Signals, self.sig2 + V2I_interference)
         V2I_Capacity = self.bandwidth * np.log2(1 + V2I_SINR)
-        V2I_Capacity_sum = np.sum(V2I_Capacity)
+        return V2I_Capacity
 
-        # 接下来计算V2V的信道容量
+    def get_V2V_capacity(self, all_actions, update_payload=True):
         V2V_interference = self.compute_V2V_interference(all_actions)
-
-        V2V_reward = 0
+        V2V_capacity = np.zeros((self.n_veh, self.n_des))
         for i in range(self.n_veh):
             for j in range(self.n_des):
-                if self.remain_payload[i][j] > 0:
-                    V2V_reward += self.beta
-                else:
-                    # 计算信道m的容量
-                    m = all_actions[i][j][0]
-                    power = self.V2V_power_dB_list[all_actions[i][j][1]]
-                    receive = self.vehicles[i].destinations[j]
-                    signal = power_dB2W(
-                        power
-                        + self.gain_dB_of_V2V((i, j), m)
-                    )
-                    noise_plus_interference = self.sig2 + V2V_interference[i][j][m]
-                    V2V_reward += self.bandwidth * np.log2(1 + signal / noise_plus_interference)
-        return weight_V2I * V2I_Capacity_sum + weight_V2V * V2V_reward
+                # 计算信道m的容量
+                m = all_actions[i][j][0]
+                if all_actions[i][j][1] == len(self.V2V_power_dB_list) - 1:
+                    continue
+                power = self.V2V_power_dB_list[all_actions[i][j][1]]
+                signal = power_dB2W(
+                    power
+                    + self.gain_dB_of_V2V((i, j), m)
+                )
+                noise_plus_interference = self.sig2 + V2V_interference[i][j][m]
+                V2V_capacity[i][j] = self.bandwidth * np.log2(1 + signal / noise_plus_interference)
+                if update_payload:
+                    self.remain_payload[i][j] -= np.floor(V2V_capacity[i][j] * self.action_time_step / 8)
+        return V2V_capacity
+
+    # def get_reward(self, all_actions, weight_V2I, weight_V2V):
+    #     # all_action 为3维数组，前两维是车号x des号，最后一维是[子载波号m，功率dB]
+    #     V2I_Capacity = self.get_V2I_capacity(all_actions)
+    #     V2I_Capacity_sum = np.sum(V2I_Capacity)
+    #
+    #     # 接下来计算V2V的信道容量
+    #
+    #     V2V_reward = 0
+    #     V2V_capacity = self.get_V2V_capacity(all_actions)
+    #     for i in range(self.n_veh):
+    #         for j in range(self.n_des):
+    #             if self.remain_payload[i][j] <= 0:
+    #                 V2V_reward += self.beta
+    #             else:
+    #                 V2V_reward += V2V_capacity[i][j]
+    #     self.V2V_capaciy = V2V_capacity
+    #     # dB_list = np.array(self.V2V_power_dB_list)
+    #     # print("power:\n",dB_list[all_actions[:,:,1]])
+    #     # print("V2V_capacity:\n",V2V_capacity)
+    #     # print("本时间步的最大信道容量为: %dKBps" % (np.max(V2V_capacity) / 8000))
+    #     # print("本时间步的平均信道容量为: %dKBps" % (np.mean(V2V_capacity) / 8000))
+    #     return weight_V2I * V2I_Capacity_sum + weight_V2V * V2V_reward
 
     def renew_positions(self):
         # 不能直行的条件判断
@@ -637,6 +641,10 @@ class Environment:
                 v.turn = ''
         # 目前成功更新了每辆车的位置
         # 是否需要同时修改fast_fading等数据？先不了，还没有考虑如何存储。
+
+    def __repr__(self):
+        vehicle_info = [(v.position, v.direction, v.turn) for v in self.vehicles]
+        return "Vehicle information:\n" + str(vehicle_info)
 
 
 if __name__ == '__main__':
