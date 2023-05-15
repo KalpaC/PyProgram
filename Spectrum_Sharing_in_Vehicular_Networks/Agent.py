@@ -14,13 +14,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("device:",device)
 
 class Agent:
-    def __init__(self, veh_index, des_index, env: Environment.Environment, memory_size):
+    def __init__(self, veh_index, des_index, n_sub_carrier, memory_size):
         self.veh_index = veh_index
         self.des_index = des_index
-        self.env = env
-        self.state_dim = 1 + 1 + env.n_sub_carrier + 4 * env.n_sub_carrier + 1 + 1
+        self.state_dim = 1 + 1 + n_sub_carrier + 4 * n_sub_carrier + 1 + 1
         # 剩余载荷1+剩余时间1+干扰功率M+信道增益4*M+迭代次数1+探索率1
-        self.n_action = env.n_sub_carrier * 4
+        self.n_action = n_sub_carrier * 4
         # M个信道*4种功率
         self.dqn = DQN(self.state_dim, self.n_action, memory_size, batch_size=64)
         self.transition_buffer = []
@@ -86,7 +85,7 @@ class DQN(object):
         self.eval_net, self.target_net = Net(state_dim, n_action).to(device), Net(state_dim, n_action).to(device)
         self.state_dim, self.action_dim = state_dim, n_action
         self.learn_cnt = 0
-        self.TARGET_REPLACE_ITER = 100
+        self.copy_cycles = 100
         self.memory = ReplayMemory(memory_size, self.state_dim * 2 + 2)
         self.learning_rate = 0.001
         self.optimizer = torch.optim.RMSprop(self.eval_net.parameters(), lr=self.learning_rate)
@@ -97,18 +96,18 @@ class DQN(object):
     def choose_action(self, state_vector, epsilon):
         # epsilon-greedy
         state_vector = state_vector.to(device)
-        if np.random.uniform(0, 1) >= epsilon:
+        if np.random.uniform(0, 1) < epsilon:
+            return np.random.randint(0, self.action_dim)
+        else:
             q_value = self.eval_net.forward(state_vector)
             state_idx = torch.argmax(q_value).item()
             return state_idx
-        else:
-            return np.random.randint(0, self.action_dim)
 
     def add_transition(self, transition):
         self.memory.add(transition)
 
     def learn_with_min_batch(self):
-        if self.learn_cnt % self.TARGET_REPLACE_ITER == 0:
+        if self.learn_cnt % self.copy_cycles == 0:
             self.target_net.load_state_dict(self.eval_net.state_dict())
         self.learn_cnt += 1
         transitions = self.memory.choose(self.batch_size)
@@ -117,12 +116,6 @@ class DQN(object):
         actions = transitions[:, self.state_dim:self.state_dim + 1].long()
         rewards = transitions[:, self.state_dim + 1:self.state_dim + 2]
         new_states = transitions[:, self.state_dim + 2:]
-        # print(old_states.shape)
-        # print(actions)
-        # print(rewards.shape)
-        # print(new_states.shape)
-        # print(self.eval_net(old_states).shape)
-
         q_eval = self.eval_net(old_states).gather(1, actions)
         q_next = self.target_net(new_states).detach()
         max_q = q_next.max(1)[0].view(self.batch_size, 1)

@@ -30,30 +30,12 @@ c.setFormatter(formatter)
 logger.addHandler(c)
 
 
-def valid_timedelta():
-    et = pd.Timedelta(config['expiration-time'])
-    return et
-
-
-def valid_time():
-    # 用现在的时间和有效期就能算出了
-    now = pd.Timestamp.now()
-    et = valid_timedelta()
-    return now - et
-
-
-def get_interval():
-    return config['interval']
-
-
-def get_interval_timedelta():
-    return pd.Timedelta(config['interval'])
-
-
 def get_predict_steps():
     return config['steps']
 
+def get_basic_data_amount():
+    return get_predict_steps()*5
 
-def get_interval_seconds():
-    d = get_interval_timedelta().seconds * get_predict_steps()
-    return d
+def get_buff_size():
+    return config['buff-size']
+

@@ -23,6 +23,7 @@ class Processor:
             for i in range(steps):
                 yield datetime
                 datetime += interval
+
         df = pd.DataFrame()
         # 整体上是对每一列进行操作的
         for col in self.data:
@@ -30,7 +31,7 @@ class Processor:
             model = pm.auto_arima(series,
                                   stepwise=False,
                                   n_jobs=-1)
-            predict = model.predict_only_ARIMA(steps)
+            predict = model.predict(steps)
             ans = pd.Series(predict, index=forward_index(-1))
             df[col] = ans
         return df
@@ -46,24 +47,30 @@ class Processor:
             for i in range(steps):
                 yield datetime
                 datetime += interval
+
         df = pd.DataFrame()
         # 整体上是对每一列进行操作的
         for col in self.data:
             # 第一步，进行ceemdan分解
             series = self.data[col]
             cIMFs, res = get_cIMFs(series)
-            total = np.array([0.0] * steps)
+            print(col)
+            if np.isnan(cIMFs).any():
+                df[col] = pd.Series(np.full(steps, series[-1]), index=forward_index(-1))
+                continue
+            total = np.zeros(steps)
             for cimf in cIMFs:
-                model = pm.auto_arima(cimf,
-                                      stepwise=False,
-                                      n_jobs=-1)
-                predict = model.predict_only_ARIMA(steps)
+                try:
+                    model = pm.auto_arima(cimf,
+                                          stepwise=False,
+                                          n_jobs=-1)
+                    predict = model.predict(steps)
+                except Exception:
+                    predict = np.full(steps, cimf[-1])
                 total += predict
-                print(pd.Series(predict,index=forward_index(-1)))
             ans = pd.Series(total, index=forward_index(-1))
             df[col] = ans
         return df
-
 
 
 def get_cIMFs(series: pd.Series):

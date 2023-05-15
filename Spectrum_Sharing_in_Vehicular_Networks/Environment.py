@@ -6,17 +6,13 @@ import time
 import numpy as np
 import math
 
-# 一、确定道路环境
 from typing import List
-
 
 def kmph2mps(velocity):
     return velocity * 1000 / 3600
 
-
 def power_dB2W(power_dB):
     return 10 ** (power_dB / 10)
-
 
 class Vehicle:
     # Vehicle simulator: include all the information for a vehicle
@@ -34,7 +30,7 @@ class V2VChannels:
         self.height_BS = 25  # m
         self.height_veh = 1.5  # m
         self.carrier_frequency = 2  # GHz
-        self.decorrelation_distance = 10
+        self.decorrelation_distance = 10  # m
         self.shadow_std = 3
         self.n_veh = n_veh
         self.n_sub_carrier = n_sub_carrier
@@ -259,27 +255,28 @@ class Environment:
         self.vehicles.append(Vehicle(position, direction, np.random.randint(15,60)))
 
     def init_all_vehicles(self):
-        def get_destination():
-            # 找到对每辆车找到距离它最近的self.n_des辆车
-            # 但这种更新逻辑似乎不适合，似乎只需要获取一次即可，目前只放在init_all_vehicles函数中
-            positions = np.array([c.position for c in self.vehicles])
-            distance = np.zeros((self.n_veh, self.n_veh))
-            for i in range(self.n_veh):
-                for j in range(self.n_veh):
-                    # np.linalg.norm用于计算向量的模，此处可以用于计算两点间距离
-                    distance[i][j] = np.linalg.norm(positions[i] - positions[j])
-            for i in range(self.n_veh):
-                sort_idx = np.argsort(distance[:, i])
-                self.vehicles[i].destinations = sort_idx[1:1 + self.n_des]
-
         # 初始化全部的vehicle，
         for i in range(self.n_veh):
             self.add_new_vehicle()
-        get_destination()
+        self.get_destination()
+
+    def get_destination(self):
+        # 找到对每辆车找到距离它最近的self.n_des辆车
+        # 每次更新位置之后都需要重新判断，因为数据包的有效期恰好也过了
+        positions = np.array([c.position for c in self.vehicles])
+        distance = np.zeros((self.n_veh, self.n_veh))
+        for i in range(self.n_veh):
+            for j in range(self.n_veh):
+                # np.linalg.norm用于计算向量的模，此处可以用于计算两点间距离
+                distance[i][j] = np.linalg.norm(positions[i] - positions[j])
+        for i in range(self.n_veh):
+            sort_idx = np.argsort(distance[:, i])
+            self.vehicles[i].destinations = sort_idx[1:1 + self.n_des]
 
     def renew_environment(self):
         # 执行周期维100ms的统一更新，所以并不包括FastFading的更新
         self.renew_positions()
+        self.get_destination()
         positions = [c.position for c in self.vehicles]
         self.V2IChannels.update_positions(positions)
         self.V2VChannels.update_positions(positions)
@@ -461,29 +458,6 @@ class Environment:
                     self.remain_payload[i][j] -= np.floor(V2V_capacity[i][j] * self.action_time_step / 8)
         return V2V_capacity
 
-    # def get_reward(self, all_actions, weight_V2I, weight_V2V):
-    #     # all_action 为3维数组，前两维是车号x des号，最后一维是[子载波号m，功率dB]
-    #     V2I_Capacity = self.get_V2I_capacity(all_actions)
-    #     V2I_Capacity_sum = np.sum(V2I_Capacity)
-    #
-    #     # 接下来计算V2V的信道容量
-    #
-    #     V2V_reward = 0
-    #     V2V_capacity = self.get_V2V_capacity(all_actions)
-    #     for i in range(self.n_veh):
-    #         for j in range(self.n_des):
-    #             if self.remain_payload[i][j] <= 0:
-    #                 V2V_reward += self.beta
-    #             else:
-    #                 V2V_reward += V2V_capacity[i][j]
-    #     self.V2V_capaciy = V2V_capacity
-    #     # dB_list = np.array(self.V2V_power_dB_list)
-    #     # print("power:\n",dB_list[all_actions[:,:,1]])
-    #     # print("V2V_capacity:\n",V2V_capacity)
-    #     # print("本时间步的最大信道容量为: %dKBps" % (np.max(V2V_capacity) / 8000))
-    #     # print("本时间步的平均信道容量为: %dKBps" % (np.mean(V2V_capacity) / 8000))
-    #     return weight_V2I * V2I_Capacity_sum + weight_V2V * V2V_reward
-
     def renew_positions(self):
         # 不能直行的条件判断
         def cant_go_straight(car: Vehicle):
@@ -646,7 +620,7 @@ class Environment:
         vehicle_info = [(v.position, v.direction, v.turn) for v in self.vehicles]
         return "Vehicle information:\n" + str(vehicle_info)
 
-
-if __name__ == '__main__':
-    env = Environment()
-    env.test()
+#
+# if __name__ == '__main__':
+#     env = Environment()
+#     env.test()

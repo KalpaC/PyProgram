@@ -1,5 +1,4 @@
 {
-  "expiration-time":"1d",
-  "interval": "60s",
-  "steps": 5
+  "steps": 5,
+  "buff-size": 10000
 }
