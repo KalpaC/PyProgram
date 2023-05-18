@@ -2,9 +2,7 @@
 import numpy as np
 import pandas as pd
 from PyEMD import CEEMDAN
-from matplotlib import pyplot as plt
 import pmdarima as pm
-from sklearn.metrics import mean_squared_error
 
 
 class Processor:
@@ -36,7 +34,7 @@ class Processor:
             df[col] = ans
         return df
 
-    def predict_with_CEEMDAN(self, steps: int) -> pd.DataFrame:
+    def predict_with_CEEMDAN(self, steps: int) -> (pd.DataFrame,bool):
         """
         :param steps: 向后预测的步长个数
         :return: 返回具有时间戳索引的预测数据
@@ -50,13 +48,14 @@ class Processor:
 
         df = pd.DataFrame()
         # 整体上是对每一列进行操作的
+        have_error = False
         for col in self.data:
             # 第一步，进行ceemdan分解
             series = self.data[col]
             cIMFs, res = get_cIMFs(series)
-            print(col)
             if np.isnan(cIMFs).any():
-                df[col] = pd.Series(np.full(steps, series[-1]), index=forward_index(-1))
+                df[col] = pd.Series(np.full(steps, series.mean()), index=forward_index(-1))
+                have_error = True
                 continue
             total = np.zeros(steps)
             for cimf in cIMFs:
@@ -66,11 +65,12 @@ class Processor:
                                           n_jobs=-1)
                     predict = model.predict(steps)
                 except Exception:
-                    predict = np.full(steps, cimf[-1])
+                    predict = np.full(steps, np.mean(cimf))
+                    have_error = True
                 total += predict
             ans = pd.Series(total, index=forward_index(-1))
             df[col] = ans
-        return df
+        return df,have_error
 
 
 def get_cIMFs(series: pd.Series):
@@ -102,19 +102,3 @@ def get_indexed_cIMFs(series: pd.Series):
     res = pd.Series(res, index=series.index)
     return cIMFs, res
 
-
-def show(series, cIMFs, res):
-    plt.figure(figsize=(12, 9))
-    plt.subplots_adjust(hspace=0.1)
-    plt.subplot(cIMFs.shape[0] + 2, 1, 1)
-    plt.plot(series, 'r')
-    plt.ylabel('OriginData')
-    for i in range(cIMFs.shape[0]):
-        plt.subplot(cIMFs.shape[0] + 3, 1, i + 3)
-        plt.plot(cIMFs[i], 'g')
-        plt.ylabel("IMF %i" % (i + 1))
-        plt.locator_params(axis='x', nbins=10)
-    plt.subplot(cIMFs.shape[0] + 3, 1, cIMFs.shape[0] + 3)
-    plt.plot(res, 'g')
-    plt.ylabel('Residual')
-    plt.show()

@@ -500,140 +500,141 @@ class Environment:
         return V2V_capacity
 
     def renew_positions(self):
-        # ===============
-        # This function updates the position of each vehicle
-        # ===============
+        def renew_positions(self):
+            # ===============
+            # This function updates the position of each vehicle
+            # ===============
 
-        i = 0
-        while (i < len(self.vehicles)):
-            delta_distance = self.vehicles[i].velocity * self.position_time_step
-            change_direction = False
-            if self.vehicles[i].direction == 'u':
-                # print ('len of position', len(self.position), i)
-                for j in range(len(self.left_lanes)):
+            i = 0
+            while (i < len(self.vehicles)):
+                delta_distance = self.vehicles[i].velocity * self.time_slow
+                change_direction = False
+                if self.vehicles[i].direction == 'u':
+                    # print ('len of position', len(self.position), i)
+                    for j in range(len(self.left_lanes)):
 
-                    if (self.vehicles[i].position[1] <= self.left_lanes[j]) and (
-                            (self.vehicles[i].position[1] + delta_distance) >= self.left_lanes[
-                        j]):  # came to an cross
-                        if (np.random.uniform(0, 1) < 0.4):
-                            self.vehicles[i].position = [self.vehicles[i].position[0] - (
-                                    delta_distance - (self.left_lanes[j] - self.vehicles[i].position[1])),
-                                                         self.left_lanes[j]]
-                            self.vehicles[i].direction = 'l'
-                            change_direction = True
-                            break
-                if change_direction == False:
-                    for j in range(len(self.right_lanes)):
-                        if (self.vehicles[i].position[1] <= self.right_lanes[j]) and (
-                                (self.vehicles[i].position[1] + delta_distance) >= self.right_lanes[j]):
+                        if (self.vehicles[i].position[1] <= self.left_lanes[j]) and (
+                                (self.vehicles[i].position[1] + delta_distance) >= self.left_lanes[
+                            j]):  # came to an cross
                             if (np.random.uniform(0, 1) < 0.4):
-                                self.vehicles[i].position = [self.vehicles[i].position[0] + (
-                                        delta_distance + (self.right_lanes[j] - self.vehicles[i].position[1])),
-                                                             self.right_lanes[j]]
-                                self.vehicles[i].direction = 'r'
+                                self.vehicles[i].position = [self.vehicles[i].position[0] - (
+                                        delta_distance - (self.left_lanes[j] - self.vehicles[i].position[1])),
+                                                             self.left_lanes[j]]
+                                self.vehicles[i].direction = 'l'
                                 change_direction = True
-                                break
-                if change_direction == False:
-                    self.vehicles[i].position[1] += delta_distance
-            if (self.vehicles[i].direction == 'd') and (change_direction == False):
-                # print ('len of position', len(self.position), i)
-                for j in range(len(self.left_lanes)):
-                    if (self.vehicles[i].position[1] >= self.left_lanes[j]) and (
-                            (self.vehicles[i].position[1] - delta_distance) <= self.left_lanes[
-                        j]):  # came to an cross
-                        if (np.random.uniform(0, 1) < 0.4):
-                            self.vehicles[i].position = [self.vehicles[i].position[0] - (
-                                    delta_distance - (self.vehicles[i].position[1] - self.left_lanes[j])),
-                                                         self.left_lanes[j]]
-                            # print ('down with left', self.vehicles[i].position)
-                            self.vehicles[i].direction = 'l'
-                            change_direction = True
-                            break
-                if change_direction == False:
-                    for j in range(len(self.right_lanes)):
-                        if (self.vehicles[i].position[1] >= self.right_lanes[j]) and (
-                                self.vehicles[i].position[1] - delta_distance <= self.right_lanes[j]):
-                            if (np.random.uniform(0, 1) < 0.4):
-                                self.vehicles[i].position = [self.vehicles[i].position[0] + (
-                                        delta_distance + (self.vehicles[i].position[1] - self.right_lanes[j])),
-                                                             self.right_lanes[j]]
-                                # print ('down with right', self.vehicles[i].position)
-                                self.vehicles[i].direction = 'r'
-                                change_direction = True
-                                break
-                if change_direction == False:
-                    self.vehicles[i].position[1] -= delta_distance
-            if (self.vehicles[i].direction == 'r') and (change_direction == False):
-                # print ('len of position', len(self.position), i)
-                for j in range(len(self.up_lanes)):
-                    if (self.vehicles[i].position[0] <= self.up_lanes[j]) and (
-                            (self.vehicles[i].position[0] + delta_distance) >= self.up_lanes[
-                        j]):  # came to an cross
-                        if (np.random.uniform(0, 1) < 0.4):
-                            self.vehicles[i].position = [self.up_lanes[j], self.vehicles[i].position[1] + (
-                                    delta_distance - (self.up_lanes[j] - self.vehicles[i].position[0]))]
-                            change_direction = True
-                            self.vehicles[i].direction = 'u'
-                            break
-                if change_direction == False:
-                    for j in range(len(self.down_lanes)):
-                        if (self.vehicles[i].position[0] <= self.down_lanes[j]) and (
-                                (self.vehicles[i].position[0] + delta_distance) >= self.down_lanes[j]):
-                            if (np.random.uniform(0, 1) < 0.4):
-                                self.vehicles[i].position = [self.down_lanes[j], self.vehicles[i].position[1] - (
-                                        delta_distance - (self.down_lanes[j] - self.vehicles[i].position[0]))]
-                                change_direction = True
-                                self.vehicles[i].direction = 'd'
-                                break
-                if change_direction == False:
-                    self.vehicles[i].position[0] += delta_distance
-            if (self.vehicles[i].direction == 'l') and (change_direction == False):
-                for j in range(len(self.up_lanes)):
-
-                    if (self.vehicles[i].position[0] >= self.up_lanes[j]) and (
-                            (self.vehicles[i].position[0] - delta_distance) <= self.up_lanes[
-                        j]):  # came to an cross
-                        if (np.random.uniform(0, 1) < 0.4):
-                            self.vehicles[i].position = [self.up_lanes[j], self.vehicles[i].position[1] + (
-                                    delta_distance - (self.vehicles[i].position[0] - self.up_lanes[j]))]
-                            change_direction = True
-                            self.vehicles[i].direction = 'u'
-                            break
-                if change_direction == False:
-                    for j in range(len(self.down_lanes)):
-                        if (self.vehicles[i].position[0] >= self.down_lanes[j]) and (
-                                (self.vehicles[i].position[0] - delta_distance) <= self.down_lanes[j]):
-                            if (np.random.uniform(0, 1) < 0.4):
-                                self.vehicles[i].position = [self.down_lanes[j], self.vehicles[i].position[1] - (
-                                        delta_distance - (self.vehicles[i].position[0] - self.down_lanes[j]))]
-                                change_direction = True
-                                self.vehicles[i].direction = 'd'
                                 break
                     if change_direction == False:
-                        self.vehicles[i].position[0] -= delta_distance
+                        for j in range(len(self.right_lanes)):
+                            if (self.vehicles[i].position[1] <= self.right_lanes[j]) and (
+                                    (self.vehicles[i].position[1] + delta_distance) >= self.right_lanes[j]):
+                                if (np.random.uniform(0, 1) < 0.4):
+                                    self.vehicles[i].position = [self.vehicles[i].position[0] + (
+                                            delta_distance + (self.right_lanes[j] - self.vehicles[i].position[1])),
+                                                                 self.right_lanes[j]]
+                                    self.vehicles[i].direction = 'r'
+                                    change_direction = True
+                                    break
+                    if change_direction == False:
+                        self.vehicles[i].position[1] += delta_distance
+                if (self.vehicles[i].direction == 'd') and (change_direction == False):
+                    # print ('len of position', len(self.position), i)
+                    for j in range(len(self.left_lanes)):
+                        if (self.vehicles[i].position[1] >= self.left_lanes[j]) and (
+                                (self.vehicles[i].position[1] - delta_distance) <= self.left_lanes[
+                            j]):  # came to an cross
+                            if (np.random.uniform(0, 1) < 0.4):
+                                self.vehicles[i].position = [self.vehicles[i].position[0] - (
+                                        delta_distance - (self.vehicles[i].position[1] - self.left_lanes[j])),
+                                                             self.left_lanes[j]]
+                                # print ('down with left', self.vehicles[i].position)
+                                self.vehicles[i].direction = 'l'
+                                change_direction = True
+                                break
+                    if change_direction == False:
+                        for j in range(len(self.right_lanes)):
+                            if (self.vehicles[i].position[1] >= self.right_lanes[j]) and (
+                                    self.vehicles[i].position[1] - delta_distance <= self.right_lanes[j]):
+                                if (np.random.uniform(0, 1) < 0.4):
+                                    self.vehicles[i].position = [self.vehicles[i].position[0] + (
+                                            delta_distance + (self.vehicles[i].position[1] - self.right_lanes[j])),
+                                                                 self.right_lanes[j]]
+                                    # print ('down with right', self.vehicles[i].position)
+                                    self.vehicles[i].direction = 'r'
+                                    change_direction = True
+                                    break
+                    if change_direction == False:
+                        self.vehicles[i].position[1] -= delta_distance
+                if (self.vehicles[i].direction == 'r') and (change_direction == False):
+                    # print ('len of position', len(self.position), i)
+                    for j in range(len(self.up_lanes)):
+                        if (self.vehicles[i].position[0] <= self.up_lanes[j]) and (
+                                (self.vehicles[i].position[0] + delta_distance) >= self.up_lanes[
+                            j]):  # came to an cross
+                            if (np.random.uniform(0, 1) < 0.4):
+                                self.vehicles[i].position = [self.up_lanes[j], self.vehicles[i].position[1] + (
+                                        delta_distance - (self.up_lanes[j] - self.vehicles[i].position[0]))]
+                                change_direction = True
+                                self.vehicles[i].direction = 'u'
+                                break
+                    if change_direction == False:
+                        for j in range(len(self.down_lanes)):
+                            if (self.vehicles[i].position[0] <= self.down_lanes[j]) and (
+                                    (self.vehicles[i].position[0] + delta_distance) >= self.down_lanes[j]):
+                                if (np.random.uniform(0, 1) < 0.4):
+                                    self.vehicles[i].position = [self.down_lanes[j], self.vehicles[i].position[1] - (
+                                            delta_distance - (self.down_lanes[j] - self.vehicles[i].position[0]))]
+                                    change_direction = True
+                                    self.vehicles[i].direction = 'd'
+                                    break
+                    if change_direction == False:
+                        self.vehicles[i].position[0] += delta_distance
+                if (self.vehicles[i].direction == 'l') and (change_direction == False):
+                    for j in range(len(self.up_lanes)):
 
-            # if it comes to an exit
-            if (self.vehicles[i].position[0] < 0) or (self.vehicles[i].position[1] < 0) or (
-                    self.vehicles[i].position[0] > self.width) or (self.vehicles[i].position[1] > self.height):
-                # delete
-                #    print ('delete ', self.position[i])
-                if (self.vehicles[i].direction == 'u'):
-                    self.vehicles[i].direction = 'r'
-                    self.vehicles[i].position = [self.vehicles[i].position[0], self.right_lanes[-1]]
-                else:
-                    if (self.vehicles[i].direction == 'd'):
-                        self.vehicles[i].direction = 'l'
-                        self.vehicles[i].position = [self.vehicles[i].position[0], self.left_lanes[0]]
+                        if (self.vehicles[i].position[0] >= self.up_lanes[j]) and (
+                                (self.vehicles[i].position[0] - delta_distance) <= self.up_lanes[
+                            j]):  # came to an cross
+                            if (np.random.uniform(0, 1) < 0.4):
+                                self.vehicles[i].position = [self.up_lanes[j], self.vehicles[i].position[1] + (
+                                        delta_distance - (self.vehicles[i].position[0] - self.up_lanes[j]))]
+                                change_direction = True
+                                self.vehicles[i].direction = 'u'
+                                break
+                    if change_direction == False:
+                        for j in range(len(self.down_lanes)):
+                            if (self.vehicles[i].position[0] >= self.down_lanes[j]) and (
+                                    (self.vehicles[i].position[0] - delta_distance) <= self.down_lanes[j]):
+                                if (np.random.uniform(0, 1) < 0.4):
+                                    self.vehicles[i].position = [self.down_lanes[j], self.vehicles[i].position[1] - (
+                                            delta_distance - (self.vehicles[i].position[0] - self.down_lanes[j]))]
+                                    change_direction = True
+                                    self.vehicles[i].direction = 'd'
+                                    break
+                        if change_direction == False:
+                            self.vehicles[i].position[0] -= delta_distance
+
+                # if it comes to an exit
+                if (self.vehicles[i].position[0] < 0) or (self.vehicles[i].position[1] < 0) or (
+                        self.vehicles[i].position[0] > self.width) or (self.vehicles[i].position[1] > self.height):
+                    # delete
+                    #    print ('delete ', self.position[i])
+                    if (self.vehicles[i].direction == 'u'):
+                        self.vehicles[i].direction = 'r'
+                        self.vehicles[i].position = [self.vehicles[i].position[0], self.right_lanes[-1]]
                     else:
-                        if (self.vehicles[i].direction == 'l'):
-                            self.vehicles[i].direction = 'u'
-                            self.vehicles[i].position = [self.up_lanes[0], self.vehicles[i].position[1]]
+                        if (self.vehicles[i].direction == 'd'):
+                            self.vehicles[i].direction = 'l'
+                            self.vehicles[i].position = [self.vehicles[i].position[0], self.left_lanes[0]]
                         else:
-                            if (self.vehicles[i].direction == 'r'):
-                                self.vehicles[i].direction = 'd'
-                                self.vehicles[i].position = [self.down_lanes[-1], self.vehicles[i].position[1]]
+                            if (self.vehicles[i].direction == 'l'):
+                                self.vehicles[i].direction = 'u'
+                                self.vehicles[i].position = [self.up_lanes[0], self.vehicles[i].position[1]]
+                            else:
+                                if (self.vehicles[i].direction == 'r'):
+                                    self.vehicles[i].direction = 'd'
+                                    self.vehicles[i].position = [self.down_lanes[-1], self.vehicles[i].position[1]]
 
-            i += 1
+                i += 1
 
     def __renew_positions(self):
         # 不能直行的条件判断
